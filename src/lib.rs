@@ -58,7 +58,9 @@ impl<T: Ord> Shortlist<T> {
 
     #[inline]
     pub fn append(&mut self, other: &mut Shortlist<T>) {
-        self.heap.append(&mut other.heap);
+        for i in other.drain() {
+            self.push(i);
+        }
     }
 }
 
