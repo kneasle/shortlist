@@ -16,23 +16,26 @@ impl<T: Ord> Shortlist<T> {
     }
 
     pub fn push(&mut self, item: T) {
-        if let Some(current_min) = self.heap.peek() {
-            if item <= current_min.0 {
-                // We early return if the min of the hashtable exists, and `item` is less than it
-                // (in this case `item` does not make the shortlist.
-                return;
+        if self.heap.len() < self.heap.capacity() {
+            // If the heap hasn't reached capacity we should always add the new item
+            self.heap.push(Reverse(item));
+        } else {
+            // If the heap is non-empty and `item` is less than this minimum we should early return
+            // without modifying the shortlist
+            if let Some(current_min) = self.heap.peek() {
+                if item <= current_min.0 {
+                    return;
+                }
             }
+            // Since the heap is at capacity and `item` is bigger than the current table minimum,
+            // we have to remove the minimum value to make space for `item`
+            assert!(self.heap.pop().is_some());
+            self.heap.push(Reverse(item));
         }
-        // If the heap is at capacity, we need to remove the min value from the heap, which is
-        // knocked out of the shortlist by `item`.
-        if self.heap.len() == self.heap.capacity() {
-            self.heap.pop();
-        }
-        // Push the new item
-        self.heap.push(Reverse(item));
     }
 
     pub fn into_sorted_vec(self) -> Vec<T> {
+        // We transmute the memory in order to convert the `Reverse<T>`s into `T`s
         let mut vec: Vec<T> = unsafe { std::mem::transmute(self.heap.into_sorted_vec()) };
         // Correct for the fact that the min-heap is actually a max-heap with the 'Ord' operations
         // reversed.
