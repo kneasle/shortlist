@@ -131,6 +131,10 @@ mod tests {
     use super::Shortlist;
     use rand::prelude::*;
 
+    /* ===== HELPER FUNCTIONS ===== */
+
+    /// Given a sorted [`Vec`] of input values and a sorted [`Vec`] of the values taken from a
+    /// [`Shortlist`] of that item, checks that the [`Shortlist`] behaved correctly.
     fn check_sorted_vecs<T: Ord + Eq + std::fmt::Debug>(
         sorted_input_values: Vec<T>,
         shortlist_vec: Vec<&T>,
@@ -160,6 +164,9 @@ mod tests {
         }
     }
 
+    /// Generates a randomised chunk of input data and a [`Shortlist`] built from that data.  The
+    /// [`Vec`] returned is always sorted, though the [`Shortlist`] is generated from the unsorted
+    /// data to be a fair test.
     fn generate_input_and_shortlist(rng: &mut impl Rng) -> (Vec<usize>, Shortlist<usize>) {
         // Decide how much capacity the shortlist will have
         let capacity = rng.gen_range(1, 100);
@@ -176,6 +183,7 @@ mod tests {
         (input_values, shortlist)
     }
 
+    /// Test a given check over [`Shortlist`]s many many times.
     fn check_correctness(check: impl Fn(Vec<usize>, Shortlist<usize>) -> ()) {
         let mut rng = thread_rng();
         // Make a shortlist with a known set of values
@@ -185,6 +193,8 @@ mod tests {
             check(input_values, shortlist);
         }
     }
+
+    /* ===== TESTING FUNCTIONS ===== */
 
     #[test]
     fn iter() {
