@@ -44,6 +44,18 @@ impl<T: Ord> Shortlist<T> {
         vec
     }
 
+    pub fn into_sorted_vec_safe(self) -> Vec<T>
+    where
+        T: Clone,
+    {
+        self.heap
+            .into_sorted_vec()
+            .iter()
+            .rev()
+            .map(|x| x.0.clone())
+            .collect()
+    }
+
     #[inline]
     pub fn append(&mut self, other: &mut Shortlist<T>) {
         self.heap.append(&mut other.heap);
@@ -63,6 +75,13 @@ impl<T> Shortlist<T> {
 
     pub fn into_vec(self) -> Vec<T> {
         unsafe { std::mem::transmute(self.heap.into_vec()) }
+    }
+
+    pub fn into_vec_safe(self) -> Vec<T>
+    where
+        T: Clone,
+    {
+        self.heap.into_vec().iter().map(|x| x.0.clone()).collect()
     }
 
     #[inline]
@@ -179,12 +198,37 @@ mod tests {
     }
 
     #[test]
+    fn into_sorted_vec_safe() {
+        check_correctness(|values, shortlist| {
+            // Store the capacity for both tests to use
+            let capacity = shortlist.capacity();
+            // Unload the Shortlist using `Shortlist::into_sorted_vec`
+            let shortlist_vec = shortlist.into_sorted_vec_safe();
+            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
+            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+        });
+    }
+
+    #[test]
     fn into_vec() {
         check_correctness(|values, shortlist| {
             // Store the capacity for both tests to use
             let capacity = shortlist.capacity();
             // Unload the Shortlist using `Shortlist::into_sorted_vec`
             let mut shortlist_vec = shortlist.into_vec();
+            shortlist_vec.sort();
+            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
+            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+        });
+    }
+
+    #[test]
+    fn into_vec_safe() {
+        check_correctness(|values, shortlist| {
+            // Store the capacity for both tests to use
+            let capacity = shortlist.capacity();
+            // Unload the Shortlist using `Shortlist::into_sorted_vec`
+            let mut shortlist_vec = shortlist.into_vec_safe();
             shortlist_vec.sort();
             let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
             check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
