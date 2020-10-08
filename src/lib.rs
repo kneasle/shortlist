@@ -15,6 +15,25 @@ impl<T: Ord> Shortlist<T> {
         }
     }
 
+    pub fn from_slice(capacity: usize, contents: &[T]) -> Self
+    where
+        T: Clone,
+    {
+        let mut shortlist = Shortlist::new(capacity);
+        for i in contents {
+            shortlist.push(i.clone());
+        }
+        shortlist
+    }
+
+    pub fn with_contents(capacity: usize, contents: impl IntoIterator<Item = T>) -> Self {
+        let mut shortlist = Shortlist::new(capacity);
+        for i in contents {
+            shortlist.push(i);
+        }
+        shortlist
+    }
+
     pub fn push(&mut self, item: T) {
         if self.heap.len() < self.heap.capacity() {
             // If the heap hasn't reached capacity we should always add the new item
@@ -146,13 +165,12 @@ mod tests {
         let capacity = rng.gen_range(1, 100);
         // Make empty collections
         let mut input_values: Vec<usize> = Vec::new();
-        let mut shortlist: Shortlist<usize> = Shortlist::new(capacity);
         // Populate both collections with the same values
         for _ in 0..rng.gen_range(1, 1000) {
             let val = rng.gen_range(0, 1000);
             input_values.push(val);
-            shortlist.push(val);
         }
+        let shortlist: Shortlist<usize> = Shortlist::from_slice(capacity, &input_values);
         // Sort the input values and return
         input_values.sort();
         (input_values, shortlist)
