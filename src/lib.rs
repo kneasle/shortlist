@@ -187,20 +187,6 @@ mod tests {
     }
 
     #[test]
-    fn basic_operations() {
-        // Make a Shortlist and push a whole load of items onto it
-        let mut shortlist: Shortlist<usize> = Shortlist::new(3);
-        for i in &[4, 8, 2, 7, 5, 5, 1, 2, 9, 8] {
-            shortlist.push(*i);
-        }
-        // Copy the items out of the Shortlist using iter, sort them and check that the correct top
-        // 3 items have been returned
-        let mut best_3: Vec<usize> = shortlist.iter().copied().collect();
-        best_3.sort();
-        assert_eq!(best_3, vec![8, 8, 9]);
-    }
-
-    #[test]
     fn iter() {
         check_correctness(|values, shortlist| {
             // Store the capacity for both tests to use
