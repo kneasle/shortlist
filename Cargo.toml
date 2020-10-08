@@ -9,3 +9,6 @@ license = "MIT"
 keywords = ["collection", "heap", "ranking"]
 categories = ["algorithms", "data structures"]
 edition = "2018"
+
+[dev-dependencies]
+rand = "*"

@@ -85,3 +85,109 @@ impl<T> Shortlist<T> {
         self.heap.clear();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Shortlist;
+    use rand::prelude::*;
+
+    fn check_sorted_vecs<T: Ord + Eq + std::fmt::Debug>(
+        sorted_input_values: Vec<T>,
+        shortlist_vec: Vec<&T>,
+        capacity: usize,
+    ) {
+        println!("");
+        println!("Input length      : {}", sorted_input_values.len());
+        println!("Shortlist capacity: {}", capacity);
+        println!("Shortlist length  : {}", shortlist_vec.len());
+        // let shortlist_vec = shortlist.into_sorted_vec();
+        // Check that the shortlist's length is the minimum of its capacity and the number of input
+        // values
+        if shortlist_vec.len() != capacity.min(sorted_input_values.len()) {
+            println!("Input values: {:?}", sorted_input_values);
+            println!("Shortlisted values: {:?}", shortlist_vec);
+            panic!();
+        }
+        for (val, exp_val) in shortlist_vec
+            .iter()
+            .rev()
+            .zip(sorted_input_values.iter().rev())
+        {
+            println!("{:?} {:?}", val, exp_val);
+            assert_eq!(val, &exp_val);
+        }
+    }
+
+    fn check_correctness(check: impl Fn(Vec<usize>, Shortlist<usize>) -> ()) {
+        let mut rng = thread_rng();
+        // Make a shortlist with a known set of values
+        for _ in 1..10_000 {
+            // Decide how much capacity the shortlist will have
+            let cap = rng.gen_range(1, 100);
+            // Make empty collections
+            let mut input_values: Vec<usize> = Vec::new();
+            let mut shortlist: Shortlist<usize> = Shortlist::new(cap);
+            // Populate both collections with the same values
+            for _ in 0..rng.gen_range(1, 1000) {
+                let val = rng.gen_range(0, 1000);
+                input_values.push(val);
+                shortlist.push(val);
+            }
+            // Check that `shortlist.into_sorted_vec()` produces a suffix of `input_values.sort()`
+            input_values.sort();
+            // Check that the shortlist contains a suffix of the sorted reference vec
+            check(input_values, shortlist);
+        }
+    }
+
+    #[test]
+    fn basic_operations() {
+        // Make a Shortlist and push a whole load of items onto it
+        let mut shortlist: Shortlist<usize> = Shortlist::new(3);
+        for i in &[4, 8, 2, 7, 5, 5, 1, 2, 9, 8] {
+            shortlist.push(*i);
+        }
+        // Copy the items out of the Shortlist using iter, sort them and check that the correct top
+        // 3 items have been returned
+        let mut best_3: Vec<usize> = shortlist.iter().copied().collect();
+        best_3.sort();
+        assert_eq!(best_3, vec![8, 8, 9]);
+    }
+
+    #[test]
+    fn iter() {
+        check_correctness(|values, shortlist| {
+            // Store the capacity for both tests to use
+            let capacity = shortlist.capacity();
+            // Unload the Shortlist using `Shortlist::iter`
+            let mut shortlist_vec: Vec<&usize> = shortlist.iter().collect();
+            shortlist_vec.sort();
+            check_sorted_vecs(values, shortlist_vec, capacity);
+        });
+    }
+
+    #[test]
+    fn into_sorted_vec() {
+        check_correctness(|values, shortlist| {
+            // Store the capacity for both tests to use
+            let capacity = shortlist.capacity();
+            // Unload the Shortlist using `Shortlist::into_sorted_vec`
+            let shortlist_vec = shortlist.into_sorted_vec();
+            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
+            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+        });
+    }
+
+    #[test]
+    fn into_vec() {
+        check_correctness(|values, shortlist| {
+            // Store the capacity for both tests to use
+            let capacity = shortlist.capacity();
+            // Unload the Shortlist using `Shortlist::into_sorted_vec`
+            let mut shortlist_vec = shortlist.into_vec();
+            shortlist_vec.sort();
+            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
+            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+        });
+    }
+}
