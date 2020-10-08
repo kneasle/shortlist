@@ -29,7 +29,8 @@ impl<T: Ord> Shortlist<T> {
             }
             // Since the heap is at capacity and `item` is bigger than the current table minimum,
             // we have to remove the minimum value to make space for `item`
-            assert!(self.heap.pop().is_some());
+            let popped = self.heap.pop();
+            debug_assert!(popped.is_some());
             self.heap.push(Reverse(item));
         }
     }
