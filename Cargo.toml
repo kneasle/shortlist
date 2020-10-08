@@ -1,0 +1,11 @@
+[package]
+name = "shortlist"
+version = "0.1.0"
+authors = ["Ben White-Horne <kneasle@gmail.com>"]
+description = "A dynamic collection that only stores the 'best' items given to it."
+repository = "https://github.com/kneasle/shortlist"
+readme = "README.md"
+license = "MIT"
+keywords = ["collection", "heap", "ranking"]
+categories = ["algorithms", "data structures"]
+edition = "2018"
