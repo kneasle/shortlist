@@ -127,6 +127,8 @@ mod tests {
             println!("Shortlisted values: {:?}", shortlist_vec);
             panic!();
         }
+        // Check that `shortlist.into_sorted_vec()` produces a suffix of `input_values` (we can
+        // guaruntee that the input values are sorted).
         for (val, exp_val) in shortlist_vec
             .iter()
             .rev()
@@ -137,23 +139,28 @@ mod tests {
         }
     }
 
+    fn generate_input_and_shortlist(rng: &mut impl Rng) -> (Vec<usize>, Shortlist<usize>) {
+        // Decide how much capacity the shortlist will have
+        let capacity = rng.gen_range(1, 100);
+        // Make empty collections
+        let mut input_values: Vec<usize> = Vec::new();
+        let mut shortlist: Shortlist<usize> = Shortlist::new(capacity);
+        // Populate both collections with the same values
+        for _ in 0..rng.gen_range(1, 1000) {
+            let val = rng.gen_range(0, 1000);
+            input_values.push(val);
+            shortlist.push(val);
+        }
+        // Sort the input values and return
+        input_values.sort();
+        (input_values, shortlist)
+    }
+
     fn check_correctness(check: impl Fn(Vec<usize>, Shortlist<usize>) -> ()) {
         let mut rng = thread_rng();
         // Make a shortlist with a known set of values
         for _ in 1..10_000 {
-            // Decide how much capacity the shortlist will have
-            let cap = rng.gen_range(1, 100);
-            // Make empty collections
-            let mut input_values: Vec<usize> = Vec::new();
-            let mut shortlist: Shortlist<usize> = Shortlist::new(cap);
-            // Populate both collections with the same values
-            for _ in 0..rng.gen_range(1, 1000) {
-                let val = rng.gen_range(0, 1000);
-                input_values.push(val);
-                shortlist.push(val);
-            }
-            // Check that `shortlist.into_sorted_vec()` produces a suffix of `input_values.sort()`
-            input_values.sort();
+            let (input_values, shortlist) = generate_input_and_shortlist(&mut rng);
             // Check that the shortlist contains a suffix of the sorted reference vec
             check(input_values, shortlist);
         }
