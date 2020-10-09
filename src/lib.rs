@@ -528,22 +528,27 @@ mod tests {
     /* ===== HELPER FUNCTIONS ===== */
 
     /// Given a sorted [`Vec`] of input values and a sorted [`Vec`] of the values taken from a
-    /// [`Shortlist`] of that item, checks that the [`Shortlist`] behaved correctly.
+    /// [`Shortlist`] of those items, checks that the [`Shortlist`] behaved correctly.
     fn check_sorted_vecs<T: Ord + Eq + std::fmt::Debug>(
         sorted_input_values: Vec<T>,
         shortlist_vec: Vec<T>,
         capacity: usize,
     ) {
-        println!("");
-        println!("Input length      : {}", sorted_input_values.len());
-        println!("Shortlist capacity: {}", capacity);
-        println!("Shortlist length  : {}", shortlist_vec.len());
+        let mut debug_lines = Vec::with_capacity(1000);
+        debug_lines.push("".to_string());
+        debug_lines.push(format!("Input length      : {}", sorted_input_values.len()));
+        debug_lines.push(format!("Shortlist capacity: {}", capacity));
+        debug_lines.push(format!("Shortlist length  : {}", shortlist_vec.len()));
         // let shortlist_vec = shortlist.into_sorted_vec();
         // Check that the shortlist's length is the minimum of its capacity and the number of input
         // values
         if shortlist_vec.len() != capacity.min(sorted_input_values.len()) {
-            println!("Input values: {:?}", sorted_input_values);
-            println!("Shortlisted values: {:?}", shortlist_vec);
+            debug_lines.push(format!("Input values: {:?}", sorted_input_values));
+            debug_lines.push(format!("Shortlisted values: {:?}", shortlist_vec));
+            // Print the debug info before panicking
+            for line in debug_lines {
+                println!("{}", line);
+            }
             panic!();
         }
         // Check that `shortlist.into_sorted_vec()` produces a suffix of `input_values` (we can
@@ -553,8 +558,16 @@ mod tests {
             .rev()
             .zip(sorted_input_values.iter().rev())
         {
-            println!("{:?} {:?}", val, exp_val);
-            assert_eq!(val, exp_val);
+            if val == exp_val {
+                debug_lines.push(format!("{:?} == {:?}", val, exp_val));
+            } else {
+                debug_lines.push(format!("{:?} != {:?}", val, exp_val));
+                // Print the debug info before panicking
+                for line in debug_lines {
+                    println!("{}", line);
+                }
+                panic!();
+            }
         }
     }
 
