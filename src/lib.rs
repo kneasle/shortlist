@@ -74,13 +74,6 @@ impl<T: Ord> Shortlist<T> {
             .map(|x| x.0.clone())
             .collect()
     }
-
-    #[inline]
-    pub fn append(&mut self, other: &mut Shortlist<T>) {
-        for i in other.drain() {
-            self.push(i);
-        }
-    }
 }
 
 impl<T> Shortlist<T> {
