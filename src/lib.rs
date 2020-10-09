@@ -114,6 +114,20 @@ impl<T: Ord> Shortlist<T> {
             .map(|x| x.0.clone())
             .collect()
     }
+
+    pub fn sorted_cloned_vec(&self) -> Vec<T>
+    where
+        T: Clone,
+    {
+        // We transmute the memory in order to convert the `Reverse<T>`s into `T`s without cloning
+        // the data.  This is fine because in memory, `Reverse<T>`s are identical to `T`s, so
+        // transmuting the `Vec` is completely allowed.
+        let mut vec: Vec<T> = unsafe { std::mem::transmute(self.heap.clone().into_sorted_vec()) };
+        // Correct for the fact that the min-heap is actually a max-heap with the 'Ord' operations
+        // reversed.
+        vec.reverse();
+        vec
+    }
 }
 
 impl<T> Shortlist<T> {
@@ -265,6 +279,16 @@ mod tests {
             let capacity = shortlist.capacity();
             let shortlist_vec = shortlist.into_sorted_vec_safe();
             check_sorted_vecs(values, shortlist_vec, capacity);
+        });
+    }
+
+    #[test]
+    fn sorted_cloned_vec() {
+        check_correctness(|values, shortlist| {
+            let capacity = shortlist.capacity();
+            let shortlist_vec = shortlist.sorted_cloned_vec();
+            check_sorted_vecs(values, shortlist_vec, capacity);
+            // Check that the shortlist still has its values
         });
     }
 
