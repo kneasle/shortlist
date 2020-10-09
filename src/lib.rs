@@ -347,8 +347,7 @@ mod tests {
             // Check that the shortlist contains a suffix of the sorted reference vec
             let mut shortlist_vec = shortlist.into_vec();
             shortlist_vec.sort();
-            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
-            check_sorted_vecs(input_values, borrowed_shortlist_vec, capacity);
+            check_sorted_vecs(input_values, shortlist_vec, capacity);
         }
     }
 
@@ -379,8 +378,7 @@ mod tests {
             // Check that the shortlist contains a suffix of the sorted reference vec
             let mut shortlist_vec = shortlist.into_vec();
             shortlist_vec.sort();
-            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
-            check_sorted_vecs(input_values, borrowed_shortlist_vec, capacity);
+            check_sorted_vecs(input_values, shortlist_vec, capacity);
         }
     }
 }
