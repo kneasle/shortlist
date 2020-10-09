@@ -395,7 +395,6 @@ impl<T: Ord> Shortlist<T> {
     /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist` in
     /// ascending order.
     ///
-    /// # Safety
     /// This uses one line of `unsafe` code to avoid allocating heap memory.
     /// It makes no assumptions about the consumer's code and has been pretty extensively
     /// tested, but if you still want to trade off the performance penalty to avoid using any
@@ -516,7 +515,6 @@ impl<T> Shortlist<T> {
     /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist`
     /// in an arbitrary order.
     ///
-    /// # Safety
     /// This uses one line of `unsafe` code to avoid allocating heap memory.
     /// It makes no assumptions about the consumer's code and has been pretty extensively
     /// tested, but if you still want to trade off the performance penalty to avoid using any
