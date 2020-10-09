@@ -69,7 +69,9 @@ impl<T: Ord> Shortlist<T> {
     }
 
     pub fn into_sorted_vec(self) -> Vec<T> {
-        // We transmute the memory in order to convert the `Reverse<T>`s into `T`s
+        // We transmute the memory in order to convert the `Reverse<T>`s into `T`s without cloning
+        // the data.  This is fine because in memory, `Reverse<T>`s are identical to `T`s, so
+        // transmuting the `Vec` is completely allowed.
         let mut vec: Vec<T> = unsafe { std::mem::transmute(self.heap.into_sorted_vec()) };
         // Correct for the fact that the min-heap is actually a max-heap with the 'Ord' operations
         // reversed.
@@ -102,6 +104,9 @@ impl<T> Shortlist<T> {
     }
 
     pub fn into_vec(self) -> Vec<T> {
+        // We transmute the memory in order to convert the `Reverse<T>`s into `T`s without cloning
+        // the data.  This is fine because in memory, `Reverse<T>`s are identical to `T`s, so
+        // transmuting the `Vec` is completely allowed.
         unsafe { std::mem::transmute(self.heap.into_vec()) }
     }
 
