@@ -24,7 +24,8 @@ impl<T: Ord> Shortlist<T> {
         shortlist
     }
 
-    pub fn with_contents(capacity: usize, contents: impl IntoIterator<Item = T>) -> Self {
+    // Tested
+    pub fn from_iter(capacity: usize, contents: impl IntoIterator<Item = T>) -> Self {
         let mut shortlist = Shortlist::new(capacity);
         shortlist.append(contents);
         shortlist
@@ -176,10 +177,8 @@ mod tests {
         }
     }
 
-    /// Generates a randomised chunk of input data and a [`Shortlist`] built from that data.  The
-    /// [`Vec`] returned is always sorted, though the [`Shortlist`] is generated from the unsorted
-    /// data to be a fair test.
-    fn generate_input_and_shortlist(rng: &mut impl Rng) -> (Vec<usize>, Shortlist<usize>) {
+    /// Generates a random capacity and randomised input [`Vec`] to be used as a test sample.
+    fn gen_sample_input(rng: &mut impl Rng) -> (usize, Vec<usize>) {
         // Decide how much capacity the shortlist will have
         let capacity = rng.gen_range(1, 100);
         // Make empty collections
@@ -189,6 +188,14 @@ mod tests {
             let val = rng.gen_range(0, 1000);
             input_values.push(val);
         }
+        (capacity, input_values)
+    }
+
+    /// Generates a randomised chunk of input data and a [`Shortlist`] built from that data.  The
+    /// [`Vec`] returned is always sorted, though the [`Shortlist`] is generated from the unsorted
+    /// data to be a fair test.
+    fn generate_input_and_shortlist(rng: &mut impl Rng) -> (Vec<usize>, Shortlist<usize>) {
+        let (capacity, mut input_values) = gen_sample_input(rng);
         let shortlist: Shortlist<usize> = Shortlist::from_slice(capacity, &input_values);
         // Sort the input values and return
         input_values.sort();
@@ -260,5 +267,23 @@ mod tests {
             let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
             check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
         });
+    }
+
+    #[test]
+    fn append() {
+        let mut rng = thread_rng();
+        // Make a shortlist with a known set of values
+        for _ in 1..10_000 {
+            let (capacity, mut input_values) = gen_sample_input(&mut rng);
+            let shortlist: Shortlist<usize> =
+                Shortlist::from_iter(capacity, input_values.iter().copied());
+            // Sort the input values and return
+            input_values.sort();
+            // Check that the shortlist contains a suffix of the sorted reference vec
+            let mut shortlist_vec = shortlist.into_vec();
+            shortlist_vec.sort();
+            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
+            check_sorted_vecs(input_values, borrowed_shortlist_vec, capacity);
+        }
     }
 }
