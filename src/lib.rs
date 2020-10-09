@@ -1,4 +1,6 @@
 //! [![Crates.io](https://img.shields.io/crates/v/shortlist.svg)](https://crates.io/crates/shortlist)
+//! [![Docs.rs](https://docs.rs/shortlist/badge.svg?version=0.1.1)](https://docs.rs/shortlist)
+//!
 //! A data structure to track the largest items pushed to it with no heap allocations and `O(1)`
 //! amortized time per push.
 //!
