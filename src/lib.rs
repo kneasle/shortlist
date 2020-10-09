@@ -173,7 +173,7 @@ mod tests {
     /// [`Shortlist`] of that item, checks that the [`Shortlist`] behaved correctly.
     fn check_sorted_vecs<T: Ord + Eq + std::fmt::Debug>(
         sorted_input_values: Vec<T>,
-        shortlist_vec: Vec<&T>,
+        shortlist_vec: Vec<T>,
         capacity: usize,
     ) {
         println!("");
@@ -196,7 +196,7 @@ mod tests {
             .zip(sorted_input_values.iter().rev())
         {
             println!("{:?} {:?}", val, exp_val);
-            assert_eq!(val, &exp_val);
+            assert_eq!(val, exp_val);
         }
     }
 
@@ -244,7 +244,7 @@ mod tests {
             // Store the capacity for both tests to use
             let capacity = shortlist.capacity();
             // Unload the Shortlist using `Shortlist::iter`
-            let mut shortlist_vec: Vec<&usize> = shortlist.iter().collect();
+            let mut shortlist_vec: Vec<usize> = shortlist.iter().copied().collect();
             shortlist_vec.sort();
             check_sorted_vecs(values, shortlist_vec, capacity);
         });
@@ -255,8 +255,7 @@ mod tests {
         check_correctness(|values, shortlist| {
             let capacity = shortlist.capacity();
             let shortlist_vec = shortlist.into_sorted_vec();
-            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
-            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+            check_sorted_vecs(values, shortlist_vec, capacity);
         });
     }
 
@@ -265,8 +264,7 @@ mod tests {
         check_correctness(|values, shortlist| {
             let capacity = shortlist.capacity();
             let shortlist_vec = shortlist.into_sorted_vec_safe();
-            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
-            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+            check_sorted_vecs(values, shortlist_vec, capacity);
         });
     }
 
@@ -276,8 +274,7 @@ mod tests {
             let capacity = shortlist.capacity();
             let mut shortlist_vec = shortlist.into_vec();
             shortlist_vec.sort();
-            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
-            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+            check_sorted_vecs(values, shortlist_vec, capacity);
         });
     }
 
@@ -287,8 +284,7 @@ mod tests {
             let capacity = shortlist.capacity();
             let mut shortlist_vec = shortlist.into_vec_safe();
             shortlist_vec.sort();
-            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
-            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+            check_sorted_vecs(values, shortlist_vec, capacity);
         });
     }
 
@@ -301,8 +297,7 @@ mod tests {
             assert!(shortlist.is_empty());
             // Test that drain returned the right values
             shortlist_vec.sort();
-            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
-            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+            check_sorted_vecs(values, shortlist_vec, capacity);
         });
     }
 
