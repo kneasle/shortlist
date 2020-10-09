@@ -16,6 +16,9 @@ impl<T: Ord> Shortlist<T> {
     /// Creating a new `Shortlist` causes one heap allocation, but will allocate enough memory
     /// to make sure that all subsequent operations cause no heap allocations.
     ///
+    /// # Panics
+    /// Creating a `Shortlist` with capacity is a logical error and will cause a panic.
+    ///
     /// # Example
     /// ```
     /// use shortlist::Shortlist;
@@ -25,6 +28,7 @@ impl<T: Ord> Shortlist<T> {
     /// assert!(shortlist.is_empty());
     /// ```
     pub fn new(capacity: usize) -> Shortlist<T> {
+        assert!(capacity > 0, "Cannot create a Shortlist with capacity 0.");
         Shortlist {
             heap: BinaryHeap::with_capacity(capacity),
         }
