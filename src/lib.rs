@@ -269,7 +269,6 @@ mod tests {
         });
     }
 
-    /// Tests [`Shortlist::drain`]
     #[test]
     fn drain() {
         check_correctness(|values, mut shortlist| {
@@ -281,6 +280,15 @@ mod tests {
             shortlist_vec.sort();
             let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
             check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+        });
+    }
+
+    #[test]
+    fn clear() {
+        check_correctness(|_values, mut shortlist| {
+            // Clear the shortlist and assert that it is now empty
+            shortlist.clear();
+            assert!(shortlist.is_empty());
         });
     }
 
