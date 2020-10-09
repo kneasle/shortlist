@@ -277,7 +277,36 @@ mod tests {
             let (capacity, mut input_values) = gen_sample_input(&mut rng);
             let shortlist: Shortlist<usize> =
                 Shortlist::from_iter(capacity, input_values.iter().copied());
-            // Sort the input values and return
+            // Sort the input values
+            input_values.sort();
+            // Check that the shortlist contains a suffix of the sorted reference vec
+            let mut shortlist_vec = shortlist.into_vec();
+            shortlist_vec.sort();
+            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
+            check_sorted_vecs(input_values, borrowed_shortlist_vec, capacity);
+        }
+    }
+
+    #[test]
+    fn capacity_and_len() {
+        let mut rng = thread_rng();
+        // Make a shortlist with a known set of values
+        for _ in 1..10_000 {
+            // Generate a test sample
+            let (capacity, mut input_values) = gen_sample_input(&mut rng);
+            // Add the values to the shortlist, asserting that the length and capacity are always
+            // correct
+            let mut shortlist: Shortlist<usize> = Shortlist::new(capacity);
+            for (i, val) in input_values.iter().copied().enumerate() {
+                // The length of the shortlist should increase every time we add an element, unless
+                // the shortlist is full in which case it will stay at the capacity forever
+                assert_eq!(shortlist.len(), i.min(capacity));
+                // The capacity of the shortlist should never change
+                assert_eq!(shortlist.capacity(), capacity);
+                // Add the new value
+                shortlist.push(val);
+            }
+            // Sort the input values
             input_values.sort();
             // Check that the shortlist contains a suffix of the sorted reference vec
             let mut shortlist_vec = shortlist.into_vec();
