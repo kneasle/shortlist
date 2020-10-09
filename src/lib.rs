@@ -9,13 +9,46 @@ pub struct Shortlist<T> {
 }
 
 impl<T: Ord> Shortlist<T> {
-    pub fn new(capacity: usize) -> Self {
+    /// Creates a new empty `Shortlist` with a given capacity.
+    ///
+    /// The capacity is the maximum number of items that the `Shortlist` will store at an any one
+    /// time.
+    /// Creating a new `Shortlist` causes one heap allocation, but will allocate enough memory
+    /// to make sure that all subsequent operations cause no heap allocations.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let shortlist: Shortlist<u64> = Shortlist::new(42);
+    /// assert_eq!(shortlist.capacity(), 42);
+    /// assert!(shortlist.is_empty());
+    /// ```
+    pub fn new(capacity: usize) -> Shortlist<T> {
         Shortlist {
             heap: BinaryHeap::with_capacity(capacity),
         }
     }
 
-    pub fn from_slice(capacity: usize, contents: &[T]) -> Self
+    /// Creates a new `Shortlist` with a given capacity that contains [`Clone`]s of the largest
+    /// items of a given slice.
+    ///
+    /// As with [`Shortlist::new`], this performs one heap allocation but every further operation
+    /// on the `Shortlist` will not.
+    ///
+    /// If you want to `move` rather than `clone` the data, consider using [`Shortlist::from_iter`]
+    /// instead.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
+    /// let shortlist = Shortlist::from_slice(4, &contents);
+    /// // The top 4 items of `contents` is [5, 6, 6, 7]
+    /// assert_eq!(shortlist.into_sorted_vec(), vec![5, 6, 6, 7]);
+    /// ```
+    pub fn from_slice(capacity: usize, contents: &[T]) -> Shortlist<T>
     where
         T: Clone,
     {
@@ -24,13 +57,69 @@ impl<T: Ord> Shortlist<T> {
         shortlist
     }
 
-    // Tested
-    pub fn from_iter(capacity: usize, contents: impl IntoIterator<Item = T>) -> Self {
+    /// Creates a new `Shortlist` with a given capacity that contains the largest items consumed
+    /// from a given collection.
+    ///
+    /// As with [`Shortlist::new`], this performs one heap allocation but every further operation
+    /// on the `Shortlist` will not.
+    ///
+    /// This does not [`Clone`] the items but instead consumes the [`Iterator`] by either moving
+    /// all the values into the [`Shortlist`] or dropping them.
+    /// If you would rather [`Clone`] the contents of the collection (so that the collection does
+    /// not have to be consumed), consider using [`Shortlist::from_slice`] or using the
+    /// [`cloned`](Iterator::cloned) iterator extension.
+    ///
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
+    /// let shortlist = Shortlist::from_iter(4, contents.iter().copied());
+    /// // The top 4 items of `contents` is [5, 6, 6, 7]
+    /// assert_eq!(shortlist.into_vec(), vec![5, 6, 6, 7]);
+    /// ```
+    pub fn from_iter(capacity: usize, contents: impl IntoIterator<Item = T>) -> Shortlist<T> {
         let mut shortlist = Shortlist::new(capacity);
         shortlist.append(contents);
         shortlist
     }
 
+    /// Add an item to the `Shortlist`.
+    ///
+    /// Because capacity of a `Shortlist` is fixed, once this capacity is reached any new items
+    /// will either be immediately dropped (if it is not large enough to make the shortlist) or the
+    /// new item will cause an existing item in the `Shortlist` to be dropped.
+    ///
+    /// If the `item` is big enough and there are at least two minimum values, exactly which of
+    /// these minimum items will be dropped is an implementation detail of the underlying
+    /// [`BinaryHeap`] and cannot be relied upon.
+    ///
+    /// # Time Complexity
+    /// The amortized cost of this operation, over all possible input sequence is `O(1)` (same as
+    /// [`BinaryHeap::push`]).
+    /// This degrades the more sorted the input sequence is.
+    /// However, **unlike** [`BinaryHeap::push`] this will never reallocate, so the worst case cost of
+    /// any single `push` is `O(log n)` where `n` is the length of the `Shortlist`.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// // Keep track of the 3 largest items so far.
+    /// let mut shortlist = Shortlist::new(3);
+    ///
+    /// // The first two values will get added regardless of how small they are
+    /// shortlist.push(0);
+    /// shortlist.push(0);
+    /// assert_eq!(shortlist.len(), 2);
+    /// // Adding two more values will cause one of the 0s to get dropped from the Shortlist.
+    /// // However, we don't know which `0` is still in the Shortlist
+    /// shortlist.push(3);
+    /// shortlist.push(4);
+    /// // We now expect the shortlist to contain [0, 3, 4]
+    /// assert_eq!(shortlist.into_sorted_vec(), vec![0, 3, 4]);
+    /// ```
     pub fn push(&mut self, item: T) {
         if self.heap.len() < self.heap.capacity() {
             // If the heap hasn't reached capacity we should always add the new item
@@ -51,6 +140,38 @@ impl<T: Ord> Shortlist<T> {
         }
     }
 
+    /// Add an item to the `Shortlist` by reference, cloning it only if necessary.
+    ///
+    /// This is almost identical to [`Shortlist::push`], but gives better performance when cloning
+    /// items since this will only [`Clone`] that item when it is added to the `Shortlist`.
+    ///
+    /// # Time Complexity
+    /// Same as [`Shortlist::push`].
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// // Keep track of the 3 largest items so far.
+    /// let mut shortlist: Shortlist<String> = Shortlist::new(3);
+    ///
+    /// // The first 3 strings will be added and therefore cloned
+    /// shortlist.clone_push(&"Aardvark".to_string());
+    /// shortlist.clone_push(&"Zebra".to_string());
+    /// shortlist.clone_push(&"Manatee".to_string());
+    /// assert_eq!(
+    ///     shortlist.sorted_cloned_vec(),
+    ///     vec!["Aardvark".to_string(), "Manatee".to_string(), "Zebra".to_string()]
+    /// );
+    /// // This will be cloned and added, causing "Aardvark" to be dropped
+    /// shortlist.clone_push(&"Salamander".to_string());
+    /// assert_eq!(
+    ///     shortlist.sorted_cloned_vec(),
+    ///     vec!["Manatee".to_string(), "Salamander".to_string(), "Zebra".to_string()]
+    /// );
+    /// // This won't be added but it also won't be cloned
+    /// shortlist.clone_push(&"Elephant".to_string());
+    /// ```
     pub fn clone_push(&mut self, item: &T)
     where
         T: Clone,
@@ -74,6 +195,28 @@ impl<T: Ord> Shortlist<T> {
         }
     }
 
+    /// Consume items from an iterator and add these to the `Shortlist`.
+    ///
+    /// This is equivalent to calling [`Shortlist::push`] on every item from `contents`.
+    /// Similarly to [`Shortlist::from_iter`] this moves all the items rather than cloning them.
+    /// If you would rather [`Clone`] the contents of the collection (so that the collection does
+    /// not have to be consumed), consider using [`Shortlist::append_slice`] or using the
+    /// [`cloned`](Iterator::cloned) iterator extension.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// // Keep track of the 3 biggest values seen so far
+    /// let mut shortlist: Shortlist<usize> = Shortlist::new(3);
+    /// // After adding [0, 4, 3, 2, 5], the 3 biggest values will be [3, 4, 5]
+    /// shortlist.append([0, 4, 3, 2, 5].iter().copied());
+    /// assert_eq!(shortlist.sorted_cloned_vec(), vec![3, 4, 5]);
+    /// // Most of these values are too small, but the 5 will cause the 3 to be
+    /// // dropped from the Shortlist
+    /// shortlist.append([0, 2, 2, 1, 5, 2].iter().copied());
+    /// assert_eq!(shortlist.sorted_cloned_vec(), vec![4, 5, 5]);
+    /// ```
     #[inline]
     pub fn append(&mut self, contents: impl IntoIterator<Item = T>) {
         for i in contents {
@@ -81,7 +224,30 @@ impl<T: Ord> Shortlist<T> {
         }
     }
 
-    // Tested
+    /// Clone all items from a slice and add them to the `Shortlist`.
+    ///
+    /// This is _equivalent_ to calling [`Shortlist::push`] on the [`Clone`] of every
+    /// item in the slice.
+    /// It will, however, be faster than using [`Shortlist::push`] because it internally uses
+    /// [`Shortlist::clone_push`], which only clones the values if they are added to the
+    /// `Shortlist`.
+    /// If you want to move the items and consume the slice rather than cloning them, consider using
+    /// [`Shortlist::append`] instead.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// // Keep track of the 3 biggest values seen so far
+    /// let mut shortlist: Shortlist<usize> = Shortlist::new(3);
+    /// // After adding [0, 4, 3, 2, 5], the 3 biggest values will be [3, 4, 5]
+    /// shortlist.append_slice(&[0, 4, 3, 2, 5]);
+    /// assert_eq!(shortlist.sorted_cloned_vec(), vec![3, 4, 5]);
+    /// // Most of these values are too small, but the 5 will cause the 3 to be
+    /// // dropped from the Shortlist
+    /// shortlist.append_slice(&[0, 2, 2, 1, 5, 2]);
+    /// assert_eq!(shortlist.sorted_cloned_vec(), vec![4, 5, 5]);
+    /// ```
     #[inline]
     pub fn append_slice(&mut self, contents: &[T])
     where
@@ -92,6 +258,24 @@ impl<T: Ord> Shortlist<T> {
         }
     }
 
+    /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist` in
+    /// ascending order.
+    ///
+    /// # Safety
+    /// This uses one line of `unsafe` code to avoid allocating heap memory.
+    /// It makes no assumptions about the consumer's code and has been pretty extensively
+    /// tested, but if you still want to trade off the performance penalty to avoid using any
+    /// `unsafe` code, use [`Shortlist::into_sorted_vec_safe`] instead.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
+    /// let shortlist = Shortlist::from_slice(4, &contents);
+    /// // The top 4 items of `contents` is [5, 6, 6, 7]
+    /// assert_eq!(shortlist.into_sorted_vec(), vec![5, 6, 6, 7]);
+    /// ```
     pub fn into_sorted_vec(self) -> Vec<T> {
         // We transmute the memory in order to convert the `Reverse<T>`s into `T`s without cloning
         // the data.  This is fine because in memory, `Reverse<T>`s are identical to `T`s, so
@@ -103,18 +287,47 @@ impl<T: Ord> Shortlist<T> {
         vec
     }
 
-    pub fn into_sorted_vec_safe(self) -> Vec<T>
-    where
-        T: Clone,
-    {
-        self.heap
-            .into_sorted_vec()
-            .iter()
-            .rev()
-            .map(|x| x.0.clone())
-            .collect()
+    /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist`
+    /// in ascending order.
+    ///
+    /// This is an otherwise-identical version of [`into_sorted_vec`](Shortlist::into_sorted_vec)
+    /// that has no `unsafe` code at the cost of having to allocate heap memory.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
+    /// let shortlist = Shortlist::from_slice(4, &contents);
+    /// // The top 4 items of `contents` is [5, 6, 6, 7]
+    /// assert_eq!(shortlist.into_sorted_vec_safe(), vec![5, 6, 6, 7]);
+    /// ```
+    pub fn into_sorted_vec_safe(self) -> Vec<T> {
+        let mut reversed_vec = self.heap.into_sorted_vec();
+        // Correct for the fact that the min-heap is actually a max-heap with the 'Ord' operations
+        // reversed.
+        reversed_vec.reverse();
+        let mut vec = Vec::with_capacity(reversed_vec.len());
+        for i in reversed_vec.drain(..) {
+            vec.push(i.0);
+        }
+        vec
     }
 
+    /// Returns a [`Vec`] containing the [`Clone`]d contents of this `Shortlist` in ascending
+    /// order, without the `Shortlist` being consumed.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
+    /// let shortlist = Shortlist::from_slice(4, &contents);
+    /// // The top 4 items of `contents` is [5, 6, 6, 7]
+    /// assert_eq!(shortlist.sorted_cloned_vec(), vec![5, 6, 6, 7]);
+    /// // Assert that the shortlist has not been consumed
+    /// assert_eq!(shortlist.len(), 4);
+    /// ```
     pub fn sorted_cloned_vec(&self) -> Vec<T>
     where
         T: Clone,
