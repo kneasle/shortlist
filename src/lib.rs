@@ -51,6 +51,29 @@ impl<T: Ord> Shortlist<T> {
         }
     }
 
+    pub fn clone_push(&mut self, item: &T)
+    where
+        T: Clone,
+    {
+        if self.heap.len() < self.heap.capacity() {
+            // If the heap hasn't reached capacity we should always add the new item
+            self.heap.push(Reverse(item.clone()));
+        } else {
+            // If the heap is non-empty and `item` is less than this minimum we should early return
+            // without modifying the shortlist or cloning the item
+            if let Some(current_min) = self.heap.peek() {
+                if item <= &current_min.0 {
+                    return;
+                }
+            }
+            // Since the heap is at capacity and `item` is bigger than the current table minimum,
+            // we have to remove the minimum value to make space for `item`
+            let popped = self.heap.pop();
+            debug_assert!(popped.is_some());
+            self.heap.push(Reverse(item.clone()));
+        }
+    }
+
     #[inline]
     pub fn append(&mut self, contents: impl IntoIterator<Item = T>) {
         for i in contents {
@@ -65,7 +88,7 @@ impl<T: Ord> Shortlist<T> {
         T: Clone,
     {
         for i in contents {
-            self.push(i.clone());
+            self.clone_push(i);
         }
     }
 
