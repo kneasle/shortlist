@@ -1,7 +1,7 @@
 //! A data structure to track the largest items pushed to it with no heap allocations and `O(1)`
 //! amortized time per push.
 //!
-//! ## Features
+//! # Features
 //! - Time complexity is `O(1)` per push amortized over every possible input sequence, and 
 //!   `O(log n)` worst case (if the inputs are already sorted)
 //! - No heap allocations except when creating a new `Shortlist`
@@ -9,7 +9,7 @@
 //! - 'Safe' versions are provided for functions that contain `unsafe` code in order to prevent
 //!   heap allocations
 //!
-//! ## The Problem
+//! # The Problem
 //! Suppose that you are running a brute force search over a very large search space, but want to
 //! keep more than just the single best item - for example, you want to find the best 100 items out
 //! of a search of billions options.
@@ -25,7 +25,7 @@
 //! }
 //! ```
 //!
-//! ## A bad solution
+//! # A bad solution
 //! The naive approach to this would be to store every item that we searched.  Then once the search
 //! is complete, sort this list and then take however many items we need from the end of the list.
 //! This corresponds to roughly the following code:
@@ -54,7 +54,7 @@
 //! - For any decently large search space, storing these items will likely crash the computer by
 //!   making it run out of memory.
 //! 
-//! ## The solution used by this crate
+//! # The solution used by this crate
 //! This is where using a `Shortlist` is useful.
 //!
 //! A `Shortlist` is a datastructure that will dynamically keep a 'shortlist' of the best items
