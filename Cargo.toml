@@ -1,6 +1,6 @@
 [package]
 name = "shortlist"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Ben White-Horne <kneasle@gmail.com>"]
 description = "An efficient data structure to track the largest items pushed to it."
 repository = "https://github.com/kneasle/shortlist"
