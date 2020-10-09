@@ -6,7 +6,8 @@
 //!   `O(log n)` worst case (if the inputs are already sorted)
 //! - No heap allocations except when creating a new `Shortlist`
 //! - 0 dependencies, and only ~150 lines of source code
-//! - 'Safe' versions are provided of functions containg `unsafe` code to prevent heap allocations
+//! - 'Safe' versions are provided for functions that contain `unsafe` code in order to prevent
+//!   heap allocations
 //!
 //! ## The Problem
 //! Suppose that you are running a brute force search over a very large search space, but want to
