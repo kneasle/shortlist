@@ -7,7 +7,7 @@ repository = "https://github.com/kneasle/shortlist"
 readme = "README.md"
 license = "MIT"
 keywords = ["collection", "heap", "ranking"]
-categories = ["algorithms", "data structures"]
+categories = ["algorithms", "data-structures"]
 edition = "2018"
 
 [dev-dependencies]
