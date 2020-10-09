@@ -53,7 +53,7 @@
 //!   we will never need.
 //! - For any decently large search space, storing these items will likely crash the computer by
 //!   making it run out of memory.
-//! 
+//!
 //! # The solution used by this crate
 //! This is where using a `Shortlist` is useful.
 //!
