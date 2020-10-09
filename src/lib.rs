@@ -2,8 +2,8 @@
 //! amortized time per push.
 //!
 //! # Features
-//! - Time complexity is `O(1)` per push amortized over every possible input sequence, and 
-//!   `O(log n)` worst case (if the inputs are already sorted)
+//! - Time complexity for pushing is `O(1)` amortized and `O(log n)` worst case (if the inputs are
+//!   already sorted)
 //! - No heap allocations except when creating a new `Shortlist`
 //! - 0 dependencies, and only ~150 lines of source code
 //! - 'Safe' versions are provided for functions that contain `unsafe` code in order to prevent
