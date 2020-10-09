@@ -11,4 +11,4 @@ categories = ["algorithms", "data structures"]
 edition = "2018"
 
 [dev-dependencies]
-rand = "*"
+rand = "0.7.3"
