@@ -223,9 +223,7 @@ mod tests {
     #[test]
     fn into_sorted_vec() {
         check_correctness(|values, shortlist| {
-            // Store the capacity for both tests to use
             let capacity = shortlist.capacity();
-            // Unload the Shortlist using `Shortlist::into_sorted_vec`
             let shortlist_vec = shortlist.into_sorted_vec();
             let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
             check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
@@ -235,9 +233,7 @@ mod tests {
     #[test]
     fn into_sorted_vec_safe() {
         check_correctness(|values, shortlist| {
-            // Store the capacity for both tests to use
             let capacity = shortlist.capacity();
-            // Unload the Shortlist using `Shortlist::into_sorted_vec`
             let shortlist_vec = shortlist.into_sorted_vec_safe();
             let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
             check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
@@ -247,9 +243,7 @@ mod tests {
     #[test]
     fn into_vec() {
         check_correctness(|values, shortlist| {
-            // Store the capacity for both tests to use
             let capacity = shortlist.capacity();
-            // Unload the Shortlist using `Shortlist::into_sorted_vec`
             let mut shortlist_vec = shortlist.into_vec();
             shortlist_vec.sort();
             let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
@@ -260,9 +254,7 @@ mod tests {
     #[test]
     fn into_vec_safe() {
         check_correctness(|values, shortlist| {
-            // Store the capacity for both tests to use
             let capacity = shortlist.capacity();
-            // Unload the Shortlist using `Shortlist::into_sorted_vec`
             let mut shortlist_vec = shortlist.into_vec_safe();
             shortlist_vec.sort();
             let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
