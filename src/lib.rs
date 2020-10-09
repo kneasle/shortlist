@@ -15,7 +15,7 @@
 //! # The Problem
 //! Suppose that you are running a brute force search over a very large search space, but want to
 //! keep more than just the single best item - for example, you want to find the best 100 items out
-//! of a search of billions options.
+//! of a search of a billion options.
 //!
 //! I.e. you want to implement the following function:
 //! ```
@@ -51,7 +51,7 @@
 //! # );
 //! ```
 //!
-//! But this is massively inefficient in two ways:
+//! But this is massively inefficient in (at least) two ways:
 //! - Sorting very large lists is very slow, and we are sorting potentially billions of items that
 //!   we will never need.
 //! - For any decently large search space, storing these items will likely crash the computer by
@@ -60,7 +60,7 @@
 //! # The solution used by this crate
 //! This is where using a `Shortlist` is useful.
 //!
-//! A `Shortlist` is a datastructure that will dynamically keep a 'shortlist' of the best items
+//! A `Shortlist` is a data structure that will dynamically keep a 'shortlist' of the best items
 //! given to it so far, with `O(1)` amortized time for pushing new items.  It will also only perform
 //! one heap allocation when the `Shortlist` is created and every subsequent operation will be
 //! allocation free.  Therefore, to the user of this library the code becomes:
@@ -111,10 +111,10 @@
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
-/// A datastructure that tracks the largest items pushed to it with no heap allocations and `O(1)`
+/// A data structure that tracks the largest items pushed to it with no heap allocations and `O(1)`
 /// amortized time per push.
 ///
-/// A `Shortlist` is a datastructure that will dynamically keep a 'shortlist' of the best items
+/// A `Shortlist` is a data structure that will dynamically keep a 'shortlist' of the best items
 /// given to it so far, with `O(1)` amortized time for pushing new items.  It will also only perform
 /// one heap allocation when the `Shortlist` is created and every subsequent operation will be
 /// allocation free.
@@ -150,7 +150,7 @@ impl<T: Ord> Shortlist<T> {
     /// to make sure that all subsequent operations cause no heap allocations.
     ///
     /// # Panics
-    /// Creating a `Shortlist` with capacity is a logical error and will cause a panic.
+    /// Creating a `Shortlist` with capacity `0` is a logical error and will cause a panic.
     ///
     /// # Example
     /// ```
@@ -363,7 +363,7 @@ impl<T: Ord> Shortlist<T> {
 
     /// Clone all items from a slice and add them to the `Shortlist`.
     ///
-    /// This is _equivalent_ to calling [`Shortlist::push`] on the [`Clone`] of every
+    /// This is equivalent to calling [`Shortlist::push`] on the [`Clone`] of every
     /// item in the slice.
     /// It will, however, be faster than using [`Shortlist::push`] because it internally uses
     /// [`Shortlist::clone_push`], which only clones the values if they are added to the

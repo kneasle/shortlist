@@ -17,7 +17,7 @@ amortized time per push.
 ## The Problem
 Suppose that you are running a brute force search over a very large search space, but want to
 keep more than just the single best item - for example, you want to find the best 100 items out
-of a search of billions options.
+of a search of a billion options.
 
 I.e. you want to implement the following function:
 ```rust
@@ -47,7 +47,7 @@ fn get_best<T: Ord>(
 
 ```
 
-But this is massively inefficient in two ways:
+But this is massively inefficient in (at least) two ways:
 - Sorting very large lists is very slow, and we are sorting potentially billions of items that
   we will never need.
 - For any decently large search space, storing these items will likely crash the computer by
@@ -56,7 +56,7 @@ But this is massively inefficient in two ways:
 ## The solution used by this crate
 This is where using a `Shortlist` is useful.
 
-A `Shortlist` is a datastructure that will dynamically keep a 'shortlist' of the best items
+A `Shortlist` is a data structure that will dynamically keep a 'shortlist' of the best items
 given to it so far, with `O(1)` amortized time for pushing new items.  It will also only perform
 one heap allocation when the `Shortlist` is created and every subsequent operation will be
 allocation free.  Therefore, to the user of this library the code becomes:
