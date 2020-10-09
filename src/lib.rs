@@ -24,7 +24,7 @@
 //!     n: usize
 //! ) -> Vec<T> {
 //!     // Somehow get the `n` largest items produced by `big_computation` ...
-//!     # vec![]
+//! #    vec![]
 //! }
 //! ```
 //!
