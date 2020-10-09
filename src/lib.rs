@@ -344,16 +344,61 @@ impl<T: Ord> Shortlist<T> {
 }
 
 impl<T> Shortlist<T> {
+    /// Returns an [`Iterator`] that borrows the items in a `Shortlist`, in an arbitrary order.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
+    /// let mut shortlist = Shortlist::from_slice(3, &contents);
+    /// // The top 3 items of `contents` is [6, 6, 7]
+    /// let mut top_3: Vec<&usize> = shortlist.iter().collect();
+    /// top_3.sort();
+    /// assert_eq!(top_3, vec![&6, &6, &7]);
+    /// // But we can still keep using the Shortlist
+    /// shortlist.push(3);
+    /// ```
     #[inline]
     pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a T> + 'a {
         self.heap.iter().map(|x| &x.0)
     }
 
+    /// Returns the maximum number of values that this `Shortlist` will store.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// // Make a new Shortlist with capacity 100
+    /// let shortlist: Shortlist<String> = Shortlist::new(100);
+    /// assert_eq!(shortlist.capacity(), 100);
+    /// ```
     #[inline]
     pub fn capacity(&self) -> usize {
         self.heap.capacity()
     }
 
+    /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist`
+    /// in an arbitrary order.
+    ///
+    /// # Safety
+    /// This uses one line of `unsafe` code to avoid allocating heap memory.
+    /// It makes no assumptions about the consumer's code and has been pretty extensively
+    /// tested, but if you still want to trade off the performance penalty to avoid using any
+    /// `unsafe` code, use [`Shortlist::into_vec_safe`] instead.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
+    /// let shortlist = Shortlist::from_slice(4, &contents);
+    /// // The top 4 items of `contents` is [5, 6, 6, 7]
+    /// let mut top_4 = shortlist.into_vec();
+    /// top_4.sort();
+    /// assert_eq!(top_4, vec![5, 6, 6, 7]);
+    /// ```
     pub fn into_vec(self) -> Vec<T> {
         // We transmute the memory in order to convert the `Reverse<T>`s into `T`s without cloning
         // the data.  This is fine because in memory, `Reverse<T>`s are identical to `T`s, so
@@ -361,28 +406,114 @@ impl<T> Shortlist<T> {
         unsafe { std::mem::transmute(self.heap.into_vec()) }
     }
 
-    pub fn into_vec_safe(self) -> Vec<T>
-    where
-        T: Clone,
-    {
-        self.heap.into_vec().iter().map(|x| x.0.clone()).collect()
+    /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist`
+    /// in an arbitrary order.
+    ///
+    /// This is an otherwise-identical version of [`into_vec`](Shortlist::into_vec) that has no
+    /// `unsafe` code at the cost of having to allocate heap memory.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
+    /// let shortlist = Shortlist::from_slice(4, &contents);
+    /// // The top 4 items of `contents` is [5, 6, 6, 7]
+    /// let mut top_4 = shortlist.into_vec_safe();
+    /// top_4.sort();
+    /// assert_eq!(top_4, vec![5, 6, 6, 7]);
+    /// ```
+    pub fn into_vec_safe(self) -> Vec<T> {
+        let mut reversed_vec = self.heap.into_vec();
+        // move all the values out of the `Reverse`s into a different vector, and return that
+        let mut vec = Vec::with_capacity(reversed_vec.len());
+        for i in reversed_vec.drain(..) {
+            vec.push(i.0);
+        }
+        vec
     }
 
+    /// Returns the number of items in a `Shortlist`.
+    ///
+    /// This will never be greater than the [`capacity`](Shortlist::capacity).
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// // The shortlist starts with no items
+    /// let mut shortlist = Shortlist::new(3);
+    /// assert_eq!(shortlist.len(), 0);
+    /// // The first 3 items will all get added, and so cause len to increase
+    /// shortlist.push(4);
+    /// assert_eq!(shortlist.len(), 1);
+    /// shortlist.push(2);
+    /// assert_eq!(shortlist.len(), 2);
+    /// shortlist.push(5);
+    /// assert_eq!(shortlist.len(), 3);
+    /// // Adding a 4th item will cause an item to be dropped and the len to stay at 3
+    /// shortlist.push(6);
+    /// assert_eq!(shortlist.len(), 3);
+    /// ```
     #[inline]
     pub fn len(&self) -> usize {
         self.heap.len()
     }
 
+    /// Returns `true` if a `Shortlist` contains no items.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let mut shortlist = Shortlist::new(3);
+    /// // The shortlist starts empty
+    /// assert!(shortlist.is_empty());
+    /// // The shortlist is not empty if we push some values
+    /// shortlist.push(4);
+    /// assert!(!shortlist.is_empty());
+    /// shortlist.append_slice(&[0, 1, 2, 3]);
+    /// assert!(!shortlist.is_empty());
+    /// // If we clear the shortlist, it becomes empty
+    /// shortlist.clear();
+    /// assert!(shortlist.is_empty());
+    /// ```
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.heap.is_empty()
     }
 
+    /// Returns an [`Iterator`] that pops the items from a `Shortlist` in an arbitrary order.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let mut shortlist = Shortlist::new(3);
+    /// shortlist.append_slice(&[0, 1, 5, 2, 3, 5]);
+    /// // Drain the shortlist into a vector, showing that the Shortlist is then empty
+    /// let mut drained_values: Vec<usize> = shortlist.drain().collect();
+    /// assert!(shortlist.is_empty());
+    /// // Check that we drained the right values ([3, 5, 5])
+    /// drained_values.sort(); // The values are in arbitrary order
+    /// assert_eq!(drained_values, vec![3, 5, 5]);
+    /// ```
     #[inline]
     pub fn drain<'a>(&'a mut self) -> impl Iterator<Item = T> + 'a {
         self.heap.drain().map(|x| x.0)
     }
 
+    /// Remove and drop all the items in a `Shortlist`, leaving it empty.
+    ///
+    /// # Example
+    /// ```
+    /// use shortlist::Shortlist;
+    ///
+    /// let mut shortlist = Shortlist::from_slice(3, &[0, 1, 2, 3]);
+    /// // If we clear the shortlist, it becomes empty
+    /// assert!(!shortlist.is_empty());
+    /// shortlist.clear();
+    /// assert!(shortlist.is_empty());
     #[inline]
     pub fn clear(&mut self) {
         self.heap.clear();
