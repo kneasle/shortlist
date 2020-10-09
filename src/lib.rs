@@ -269,6 +269,21 @@ mod tests {
         });
     }
 
+    /// Tests [`Shortlist::drain`]
+    #[test]
+    fn drain() {
+        check_correctness(|values, mut shortlist| {
+            let capacity = shortlist.capacity();
+            let mut shortlist_vec: Vec<usize> = shortlist.drain().collect();
+            // If we have drained the shortlist, it must be empty
+            assert!(shortlist.is_empty());
+            // Test that drain returned the right values
+            shortlist_vec.sort();
+            let borrowed_shortlist_vec: Vec<&usize> = shortlist_vec.iter().collect();
+            check_sorted_vecs(values, borrowed_shortlist_vec, capacity);
+        });
+    }
+
     #[test]
     fn append() {
         let mut rng = thread_rng();
@@ -287,6 +302,7 @@ mod tests {
         }
     }
 
+    /// Tests [`Shortlist::len`], [`Shortlist::capacity`], [`Shortlist::is_empty`]
     #[test]
     fn capacity_and_len() {
         let mut rng = thread_rng();
@@ -305,6 +321,8 @@ mod tests {
                 assert_eq!(shortlist.capacity(), capacity);
                 // Add the new value
                 shortlist.push(val);
+                // If we have pushed any values, the shortlist cannot be empty
+                assert!(!shortlist.is_empty());
             }
             // Sort the input values
             input_values.sort();
