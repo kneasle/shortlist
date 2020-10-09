@@ -20,17 +20,13 @@ impl<T: Ord> Shortlist<T> {
         T: Clone,
     {
         let mut shortlist = Shortlist::new(capacity);
-        for i in contents {
-            shortlist.push(i.clone());
-        }
+        shortlist.append_slice(contents);
         shortlist
     }
 
     pub fn with_contents(capacity: usize, contents: impl IntoIterator<Item = T>) -> Self {
         let mut shortlist = Shortlist::new(capacity);
-        for i in contents {
-            shortlist.push(i);
-        }
+        shortlist.append(contents);
         shortlist
     }
 
@@ -51,6 +47,24 @@ impl<T: Ord> Shortlist<T> {
             let popped = self.heap.pop();
             debug_assert!(popped.is_some());
             self.heap.push(Reverse(item));
+        }
+    }
+
+    #[inline]
+    pub fn append(&mut self, contents: impl IntoIterator<Item = T>) {
+        for i in contents {
+            self.push(i);
+        }
+    }
+
+    // Tested
+    #[inline]
+    pub fn append_slice(&mut self, contents: &[T])
+    where
+        T: Clone,
+    {
+        for i in contents {
+            self.push(i.clone());
         }
     }
 
