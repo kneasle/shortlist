@@ -9,8 +9,7 @@
 //!   already sorted)
 //! - No heap allocations except when creating a new `Shortlist`
 //! - 0 dependencies, and only ~150 lines of source code
-//! - 'Safe' versions are provided for functions that contain `unsafe` code in order to prevent
-//!   heap allocations
+//! - No `unsafe`
 //!
 //! # The Problem
 //! Suppose that you are running a brute force search over a very large search space, but want to
@@ -396,12 +395,8 @@ impl<T: Ord> Shortlist<T> {
     }
 
     /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist` in
-    /// ascending order.
-    ///
-    /// This uses one line of `unsafe` code to avoid allocating heap memory.
-    /// It makes no assumptions about the consumer's code and has been pretty extensively
-    /// tested, but if you still want to trade off the performance penalty to avoid using any
-    /// `unsafe` code, use [`Shortlist::into_sorted_vec_safe`] instead.
+    /// ascending order.  This code technically performs a heap allocation, but LLVM usually
+    /// removes it when optimising.
     ///
     /// # Example
     /// ```
@@ -413,40 +408,13 @@ impl<T: Ord> Shortlist<T> {
     /// assert_eq!(shortlist.into_sorted_vec(), vec![5, 6, 6, 7]);
     /// ```
     pub fn into_sorted_vec(self) -> Vec<T> {
-        // We transmute the memory in order to convert the `Reverse<T>`s into `T`s without cloning
-        // the data.  This is fine because in memory, `Reverse<T>`s are identical to `T`s, so
-        // transmuting the `Vec` is completely allowed.
-        let mut vec: Vec<T> = unsafe { std::mem::transmute(self.heap.into_sorted_vec()) };
-        // Correct for the fact that the min-heap is actually a max-heap with the 'Ord' operations
-        // reversed.
-        vec.reverse();
-        vec
-    }
-
-    /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist`
-    /// in ascending order.
-    ///
-    /// This is an otherwise-identical version of [`into_sorted_vec`](Shortlist::into_sorted_vec)
-    /// that has no `unsafe` code at the cost of having to allocate heap memory.
-    ///
-    /// # Example
-    /// ```
-    /// use shortlist::Shortlist;
-    ///
-    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
-    /// let shortlist = Shortlist::from_slice(4, &contents);
-    /// // The top 4 items of `contents` is [5, 6, 6, 7]
-    /// assert_eq!(shortlist.into_sorted_vec_safe(), vec![5, 6, 6, 7]);
-    /// ```
-    pub fn into_sorted_vec_safe(self) -> Vec<T> {
-        let mut reversed_vec = self.heap.into_sorted_vec();
-        // Correct for the fact that the min-heap is actually a max-heap with the 'Ord' operations
-        // reversed.
-        reversed_vec.reverse();
-        let mut vec = Vec::with_capacity(reversed_vec.len());
-        for i in reversed_vec.drain(..) {
-            vec.push(i.0);
-        }
+        let mut vec: Vec<T> = self
+            .heap
+            .into_vec()
+            .into_iter()
+            .map(|Reverse(v)| v)
+            .collect();
+        vec.sort();
         vec
     }
 
@@ -468,13 +436,8 @@ impl<T: Ord> Shortlist<T> {
     where
         T: Clone,
     {
-        // We transmute the memory in order to convert the `Reverse<T>`s into `T`s without cloning
-        // the data.  This is fine because in memory, `Reverse<T>`s are identical to `T`s, so
-        // transmuting the `Vec` is completely allowed.
-        let mut vec: Vec<T> = unsafe { std::mem::transmute(self.heap.clone().into_sorted_vec()) };
-        // Correct for the fact that the min-heap is actually a max-heap with the 'Ord' operations
-        // reversed.
-        vec.reverse();
+        let mut vec: Vec<T> = self.heap.iter().map(|Reverse(v)| v.clone()).collect();
+        vec.sort();
         vec
     }
 }
@@ -518,11 +481,6 @@ impl<T> Shortlist<T> {
     /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist`
     /// in an arbitrary order.
     ///
-    /// This uses one line of `unsafe` code to avoid allocating heap memory.
-    /// It makes no assumptions about the consumer's code and has been pretty extensively
-    /// tested, but if you still want to trade off the performance penalty to avoid using any
-    /// `unsafe` code, use [`Shortlist::into_vec_safe`] instead.
-    ///
     /// # Example
     /// ```
     /// use shortlist::Shortlist;
@@ -535,37 +493,11 @@ impl<T> Shortlist<T> {
     /// assert_eq!(top_4, vec![5, 6, 6, 7]);
     /// ```
     pub fn into_vec(self) -> Vec<T> {
-        // We transmute the memory in order to convert the `Reverse<T>`s into `T`s without cloning
-        // the data.  This is fine because in memory, `Reverse<T>`s are identical to `T`s, so
-        // transmuting the `Vec` is completely allowed.
-        unsafe { std::mem::transmute(self.heap.into_vec()) }
-    }
-
-    /// Consumes this `Shortlist` and return a [`Vec`] containing the contents of the `Shortlist`
-    /// in an arbitrary order.
-    ///
-    /// This is an otherwise-identical version of [`into_vec`](Shortlist::into_vec) that has no
-    /// `unsafe` code at the cost of having to allocate heap memory.
-    ///
-    /// # Example
-    /// ```
-    /// use shortlist::Shortlist;
-    ///
-    /// let contents = [0, 3, 6, 5, 2, 1, 4, 6, 7];
-    /// let shortlist = Shortlist::from_slice(4, &contents);
-    /// // The top 4 items of `contents` is [5, 6, 6, 7]
-    /// let mut top_4 = shortlist.into_vec_safe();
-    /// top_4.sort();
-    /// assert_eq!(top_4, vec![5, 6, 6, 7]);
-    /// ```
-    pub fn into_vec_safe(self) -> Vec<T> {
-        let mut reversed_vec = self.heap.into_vec();
-        // move all the values out of the `Reverse`s into a different vector, and return that
-        let mut vec = Vec::with_capacity(reversed_vec.len());
-        for i in reversed_vec.drain(..) {
-            vec.push(i.0);
-        }
-        vec
+        self.heap
+            .into_vec()
+            .into_iter()
+            .map(|Reverse(v)| v)
+            .collect()
     }
 
     /// Returns the number of items in a `Shortlist`.
@@ -766,15 +698,6 @@ mod tests {
     }
 
     #[test]
-    fn into_sorted_vec_safe() {
-        check_correctness(|values, shortlist| {
-            let capacity = shortlist.capacity();
-            let shortlist_vec = shortlist.into_sorted_vec_safe();
-            check_sorted_vecs(values, shortlist_vec, capacity);
-        });
-    }
-
-    #[test]
     fn sorted_cloned_vec() {
         check_correctness(|values, shortlist| {
             let capacity = shortlist.capacity();
@@ -789,16 +712,6 @@ mod tests {
         check_correctness(|values, shortlist| {
             let capacity = shortlist.capacity();
             let mut shortlist_vec = shortlist.into_vec();
-            shortlist_vec.sort();
-            check_sorted_vecs(values, shortlist_vec, capacity);
-        });
-    }
-
-    #[test]
-    fn into_vec_safe() {
-        check_correctness(|values, shortlist| {
-            let capacity = shortlist.capacity();
-            let mut shortlist_vec = shortlist.into_vec_safe();
             shortlist_vec.sort();
             check_sorted_vecs(values, shortlist_vec, capacity);
         });
