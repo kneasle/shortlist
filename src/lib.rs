@@ -574,7 +574,7 @@ impl<T> Shortlist<T> {
     /// ```
     #[inline]
     pub fn drain<'a>(&'a mut self) -> impl Iterator<Item = T> + 'a {
-        self.heap.drain().map(|x| x.0)
+        self.heap.drain().map(|Reverse(x)| x)
     }
 
     /// Remove and drop all the items in a `Shortlist`, leaving it empty.
@@ -670,7 +670,7 @@ mod tests {
         (input_values, shortlist)
     }
 
-    /// Test a given check over [`Shortlist`]s many many times.
+    /// Test a given check over [`Shortlist`]s many times.
     fn check_correctness(check: impl Fn(Vec<usize>, Shortlist<usize>) -> ()) {
         let mut rng = thread_rng();
         // Make a shortlist with a known set of values
