@@ -331,6 +331,13 @@ impl<T: Ord> Shortlist<T> {
         }
     }
 
+    /// Returns the smallest value currently in this `Shortlist`.  This can be used to check
+    /// whether or not a new value will be permitted before spending time creating it.  This
+    /// operation takes constant time.
+    pub fn peek_min(&self) -> Option<&T> {
+        self.heap.peek().map(|x| &x.0)
+    }
+
     /// Consume items from an iterator and add these to the `Shortlist`.
     ///
     /// This is equivalent to calling [`Shortlist::push`] on every item from `contents`.
